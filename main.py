@@ -5,9 +5,10 @@ from tkinter import messagebox
 produtos = {
     "Quadro geek": 450,
     "Funko pop": 3000,
-    "Monitor Curvo": 1200,
+    "Camisa": 2000,
     "Cubo mágico": 1800,
-    "Bis": 400
+    "Bis": 400,
+    "Kit arduino": 3200,
 }
 
 saldo_inicial = 1000  # Ctrl Cash inicial
@@ -47,6 +48,24 @@ def adicionar_saldo():
     except ValueError:
         messagebox.showwarning("Entrada inválida", "Digite um número válido.")
 
+# --- Função para retirar saldo ---
+def retirar_saldo():
+    global saldo
+    try:
+        valor = int(entrada_retirar.get())
+        if valor > 0:
+            if valor <= saldo:
+                saldo -= valor
+                atualizar_saldo()
+                entrada_retirar.delete(0, tk.END)
+                messagebox.showinfo("Retirada realizada", f"Você retirou {valor} Ctrl Cash!")
+            else:
+                messagebox.showwarning("Saldo insuficiente", "Você não tem Ctrl Cash suficiente para retirar esse valor.")
+        else:
+            messagebox.showwarning("Valor inválido", "Digite um valor positivo para retirar.")
+    except ValueError:
+        messagebox.showwarning("Entrada inválida", "Digite um número válido para retirar.")
+
 # --- Atualiza o saldo na interface ---
 def atualizar_saldo():
     lbl_saldo.config(text=f"Saldo: {saldo} Ctrl Cash")
@@ -67,7 +86,7 @@ def atualizar_total():
 # --- Interface Gráfica ---
 app = tk.Tk()
 app.title("🛒 Lojinha Ctrl Cash")
-app.geometry("400x600")
+app.geometry("400x650")
 app.config(bg="#f4f4f9")  # Cor de fundo suave
 
 # Título
@@ -96,6 +115,16 @@ entrada_valor.insert(0, "100")  # valor padrão, opcional
 # Botão de adicionar saldo
 btn_adicionar = tk.Button(app, text="Adicionar Ctrl Cash", font=("Verdana", 12), bg="#2196F3", fg="white", command=adicionar_saldo, relief="flat", width=20, height=2)
 btn_adicionar.pack(pady=5)
+
+# --- Retirar Ctrl Cash ---
+lbl_retirar = tk.Label(app, text="Retirar Ctrl Cash", font=("Verdana", 12), fg="#333333", bg="#f4f4f9")
+lbl_retirar.pack(pady=10)
+
+entrada_retirar = tk.Entry(app, font=("Verdana", 12), justify='center', bd=2, relief="solid", width=20)
+entrada_retirar.pack(pady=5)
+
+btn_retirar = tk.Button(app, text="Retirar Ctrl Cash", font=("Verdana", 12), bg="#FF5733", fg="white", command=retirar_saldo, relief="flat", width=20, height=2)
+btn_retirar.pack(pady=5)
 
 # --- Inventário (seção azul) ---
 lbl_inventario = tk.Label(app, text="📦 Inventário", font=("Verdana", 14, "bold"), fg="white", bg="#2196F3")
