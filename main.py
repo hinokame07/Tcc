@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
+from PIL import Image, ImageTk
+import os
 
-# --- Dados da loja (atualizados) ---
+# --- Dados da loja ---
 produtos = {
     "Quadro geek": 450,
     "Funko pop": 3000,
@@ -11,9 +13,10 @@ produtos = {
     "Kit arduino": 3200,
 }
 
-saldo_inicial = 1000  # Ctrl Cash inicial
+saldo_inicial = 1000
+saldo = saldo_inicial
 
-# --- Função de compra ---
+# --- Funções ---
 def comprar():
     selecionado = lista_produtos.curselection()
     if not selecionado:
@@ -33,7 +36,6 @@ def comprar():
     else:
         messagebox.showwarning("Saldo insuficiente", "Você não tem Ctrl Cash suficiente!")
 
-# --- Função para adicionar saldo ---
 def adicionar_saldo():
     global saldo
     try:
@@ -48,7 +50,6 @@ def adicionar_saldo():
     except ValueError:
         messagebox.showwarning("Entrada inválida", "Digite um número válido.")
 
-# --- Função para retirar saldo ---
 def retirar_saldo():
     global saldo
     try:
@@ -60,22 +61,19 @@ def retirar_saldo():
                 entrada_retirar.delete(0, tk.END)
                 messagebox.showinfo("Retirada realizada", f"Você retirou {valor} Ctrl Cash!")
             else:
-                messagebox.showwarning("Saldo insuficiente", "Você não tem Ctrl Cash suficiente para retirar esse valor.")
+                messagebox.showwarning("Saldo insuficiente", "Você não tem Ctrl Cash suficiente.")
         else:
-            messagebox.showwarning("Valor inválido", "Digite um valor positivo para retirar.")
+            messagebox.showwarning("Valor inválido", "Digite um valor positivo.")
     except ValueError:
-        messagebox.showwarning("Entrada inválida", "Digite um número válido para retirar.")
+        messagebox.showwarning("Entrada inválida", "Digite um número válido.")
 
-# --- Atualiza o saldo na interface ---
 def atualizar_saldo():
     lbl_saldo.config(text=f"Saldo: {saldo} Ctrl Cash")
 
-# --- Adiciona produto ao inventário ---
 def adicionar_ao_inventario(produto, preco):
     inventario.insert(tk.END, f"{produto} - {preco} CC")
     atualizar_total()
 
-# --- Atualiza o total do inventário ---
 def atualizar_total():
     total = 0
     for item in inventario.get(0, tk.END):
@@ -83,62 +81,104 @@ def atualizar_total():
         total += preco
     lbl_total.config(text=f"Total: {total} CC")
 
+def toggle_fullscreen():
+    root.attributes('-fullscreen', not root.attributes('-fullscreen'))
+
 # --- Interface Gráfica ---
-app = tk.Tk()
-app.title("🛒 Lojinha Ctrl Cash")
-app.geometry("400x650")
-app.config(bg="#f4f4f9")  # Cor de fundo suave
+root = tk.Tk()
+root.title("🛒 Lojinha Ctrl Cash")
+root.attributes('-fullscreen', True)
 
-# Título
-lbl_titulo = tk.Label(app, text="🛒 Lojinha Ctrl Cash", font=("Verdana", 18, "bold"), fg="#4CAF50", bg="#f4f4f9")
-lbl_titulo.pack(pady=15)
+# --- Carregar imagem de fundo ---
+image_path = "background.jpg"
+if not os.path.exists(image_path):
+    messagebox.showerror("Erro", "Imagem de fundo não encontrada!")
+    exit()
 
-# Saldo
-lbl_saldo = tk.Label(app, text=f"Saldo: {saldo_inicial} Ctrl Cash", font=("Verdana", 12), fg="#333333", bg="#f4f4f9")
-lbl_saldo.pack()
+try:
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    
+    original_image = Image.open(image_path)
+    resized_image = original_image.resize((screen_width, screen_height), Image.LANCZOS)
+    bg_photo = ImageTk.PhotoImage(resized_image)
+except Exception as e:
+    messagebox.showerror("Erro", f"Erro ao carregar a imagem: {e}")
+    exit()
 
-# Lista de produtos
-lista_produtos = tk.Listbox(app, height=6, font=("Verdana", 11), bg="#FFFFFF", fg="#333333", selectmode=tk.SINGLE, bd=2, relief="solid", width=30)
-for item in produtos:
-    lista_produtos.insert(tk.END, f"{item} - {produtos[item]} CC")
-lista_produtos.pack(pady=10)
+# --- Canvas principal como fundo ---
+canvas = tk.Canvas(root, highlightthickness=0)
+canvas.pack(fill="both", expand=True)
+canvas.create_image(0, 0, image=bg_photo, anchor="nw")
+canvas.image = bg_photo
 
-# Botão de compra
-btn_comprar = tk.Button(app, text="Comprar", font=("Verdana", 12), bg="#4CAF50", fg="white", command=comprar, relief="flat", width=20, height=2)
-btn_comprar.pack(pady=5)
 
-# Campo de entrada para adicionar Ctrl Cash
-entrada_valor = tk.Entry(app, font=("Verdana", 12), justify='center', bd=2, relief="solid", width=20)
-entrada_valor.pack(pady=5)
-entrada_valor.insert(0, "100")  # valor padrão, opcional
+style_button = {
+    'bd': 0,
+    'highlightthickness': 0,
+    'relief': 'flat',
+    
+    
+}
 
-# Botão de adicionar saldo
-btn_adicionar = tk.Button(app, text="Adicionar Ctrl Cash", font=("Verdana", 12), bg="#2196F3", fg="white", command=adicionar_saldo, relief="flat", width=20, height=2)
-btn_adicionar.pack(pady=5)
+# Função para criar botões
+def criar_botao(parent, texto, comando, cor, font=("Verdana", 12)):
+    return tk.Button(parent, text=texto, command=comando, bg=cor, fg="white", font=font, **style_button)
 
-# --- Retirar Ctrl Cash ---
-lbl_retirar = tk.Label(app, text="Retirar Ctrl Cash", font=("Verdana", 12), fg="#333333", bg="#f4f4f9")
-lbl_retirar.pack(pady=10)
+# --- Criação dos elementos ---
+lbl_titulo = tk.Label(canvas, text="🛒 Lojinha Ctrl Cash", 
+                     font=("Verdana", 18, "bold"), fg="#4CAF50")
+canvas.create_window(screen_width//2, 50, window=lbl_titulo)
 
-entrada_retirar = tk.Entry(app, font=("Verdana", 12), justify='center', bd=2, relief="solid", width=20)
-entrada_retirar.pack(pady=5)
+lbl_saldo = tk.Label(canvas, text=f"Saldo: {saldo_inicial} Ctrl Cash", 
+                    font=("Verdana", 14))
+canvas.create_window(screen_width//2, 100, window=lbl_saldo)
 
-btn_retirar = tk.Button(app, text="Retirar Ctrl Cash", font=("Verdana", 12), bg="#FF5733", fg="white", command=retirar_saldo, relief="flat", width=20, height=2)
-btn_retirar.pack(pady=5)
+lista_produtos = tk.Listbox(canvas, height=6, font=("Verdana", 11), 
+                           fg="#333333", selectmode=tk.SINGLE,
+                           bg="#f0f0f0", width=30)
+for item, preco in produtos.items():
+    lista_produtos.insert(tk.END, f"{item} - {preco} CC")
+canvas.create_window(screen_width//2, 220, window=lista_produtos)
 
-# --- Inventário (seção azul) ---
-lbl_inventario = tk.Label(app, text="📦 Inventário", font=("Verdana", 14, "bold"), fg="white", bg="#2196F3")
-lbl_inventario.pack(pady=10, fill=tk.X)
+btn_comprar = criar_botao(canvas, "Comprar", comprar, "#4CAF50")
+btn_comprar.config(width=20, height=2)
+canvas.create_window(screen_width//2, 320, window=btn_comprar)
 
-# Lista do inventário
-inventario = tk.Listbox(app, height=6, font=("Verdana", 11), bg="#f0f8ff", fg="#333333", selectmode=tk.SINGLE, bd=2, relief="solid", width=30)
-inventario.pack(pady=10)
+entrada_valor = tk.Entry(canvas, font=("Verdana", 12), justify='center', 
+                         fg="#333333", width=20)
+entrada_valor.insert(0, "100")
+canvas.create_window(screen_width//2, 370, window=entrada_valor)
 
-# Total do inventário
-lbl_total = tk.Label(app, text="Total: 0 CC", font=("Verdana", 12), fg="#333333", bg="#f4f4f9")
-lbl_total.pack(pady=5)
+btn_adicionar = criar_botao(canvas, "Adicionar Ctrl Cash", adicionar_saldo, "#2196F3")
+btn_adicionar.config(width=20, height=2)
+canvas.create_window(screen_width//2, 420, window=btn_adicionar)
 
-# Variável de saldo
-saldo = saldo_inicial
+entrada_retirar = tk.Entry(canvas, font=("Verdana", 12), justify='center', 
+                           fg="#333333",  width=20)
+canvas.create_window(screen_width//2, 470, window=entrada_retirar)
 
-app.mainloop()
+btn_retirar = criar_botao(canvas, "Retirar Ctrl Cash", retirar_saldo, "#FF5733")
+btn_retirar.config(width=20, height=2)
+canvas.create_window(screen_width//2, 520, window=btn_retirar)
+
+lbl_inventario = tk.Label(canvas, text="📦 Inventário", 
+                         font=("Verdana", 14, "bold"), fg="white", bg="#2196F3")
+canvas.create_window(screen_width//2, 580, window=lbl_inventario)
+
+inventario = tk.Listbox(canvas, height=6, font=("Verdana", 11), 
+                       fg="#333333", bg="#f0f0f0", selectmode=tk.SINGLE,
+                       width=30)
+canvas.create_window(screen_width//2, 680, window=inventario)
+
+lbl_total = tk.Label(canvas, text="Total: 0 CC", 
+                    font=("Verdana", 12))
+canvas.create_window(screen_width//2, 750, window=lbl_total)
+
+# Botão de fullscreen corrigido
+btn_fullscreen = tk.Button(canvas, text="⛶", command=toggle_fullscreen,
+                           bg="black", fg="white", font=("Verdana", 12), **style_button)
+canvas.create_window(screen_width-50, 30, window=btn_fullscreen)
+
+# --- Inicia o aplicativo ---
+root.mainloop()
